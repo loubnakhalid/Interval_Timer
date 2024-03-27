@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href={{url_for('static',filename='css/style.css')}}>
+    <script src="https://kit.fontawesome.com/6f3103b13c.js" crossorigin="anonymous"></script>
+    <title>GYM Timer</title>
+</head>
+<body>
+    <div class="container">
+        <div class="container-content">
+            
+        </div>
+        <div class="box-container">
+            <h2>Tap your workout informations HERE <i class="fa-regular fa-hand-point-down fa-xl"></i></h2>
+            <form action="/start_timer" method="post" class="box-form">
+                <div class="box-input">
+                    <label for="work_time">Work Time </label>
+                    <input type="number"  id="work_time" name="work_time" value="10"  required>  
+                </div>
+                <div class="box-input">
+                    <label for="sets">Sets</label>
+                    <input type="number"  id="sets" name="sets" value="05"  required>  
+                </div>
+                <div class="box-input">
+                    <label for="exercises">Exercises per Set</label>
+                    <input type="number"  id="exercises" value="05" name="exercises"  required>                    
+                </div>
+                <div class="box-input">
+                    <label for="rest_time">Rest Time Sets</label>
+                    <input type="number"  id="rest_time" name="rest_time_sets" value="10"  required> 
+                </div>
+                <div class="box-input">
+                    <label for="rest_time">Rest Time Exercises</label>
+                    <input type="number"  id="rest_time" name="rest_time_exercises" value="10"  required> 
+                </div>
+                
+                
+                <div class="box-input submit">
+                    <button>Start Timer</button>
+                </div>
+            </form>
+            
+        </div>
+    </div>
+    
+</body>
+</html>

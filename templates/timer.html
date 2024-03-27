@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href={{url_for('static',filename='css/timer.css')}}>
+    <script src="https://kit.fontawesome.com/6f3103b13c.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+</head>
+<body>
+    <div class="main-container ">
+        <div class="right">
+            <div class="right-content">
+                <div class="work-reset">
+                    <button id="work" class="on">Work</button>
+                    <button id="break">break</button>
+                </div>
+                <div class="timer-container center">
+                    <div class="timer_clock" id="timer_clock">
+                            <div class="hr" id="heures">{{session["initial_work_time_h"]}}</div>
+                            <div class="colon">:</div>
+                            <div class="min" id="minutes">{{session["initial_work_time_min"]}}</div>
+                            <div class="colon">:</div>
+                            <div class="sec" id="secondes">{{session["initial_work_time_s"]}}</div>
+                    </div>
+                </div>
+                <div class="control_phone">
+                    <form id="pause-form" action="" method="post" style="display: none;">
+                        <button id="pause-button" type="submit" onclick="pause()"><i class="fa-solid fa-pause" aria-hidden="true"></i></button>
+                    </form>
+                    <form id="start-form" action="" method="" >
+                        <button id="start" type="submit" onclick="start_timer()"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+                    </form>
+                    <form id="exit-form" action="/" method="POST">
+                        <button id="exit" type="button" onclick="exit_timer()">
+                            <i class="fa-solid fa-stop" aria-hidden="true"></i> <span>Stop</span>
+                        </button>
+                    </form>
+                    <form id="reload-form" action="/reload_timer" method="post">
+                        <button id="reload" type="submit" ><i class="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i></button>
+                    </form> 
+                </div>
+            </div>
+        </div>
+        <div class="left">
+            <div class="box-bar">
+                <h3>Sets Left</h3>
+                <p>Sets number : {{session['initial_sets']}}</p>
+                <progress id="prog_sets" value="0" max={{session['initial_sets']}}></progress>
+                <span id="span_prog_sets" class="progress-label">{{ session["sets"] }}/{{ session["initial_sets"] }}</span>
+            </div>
+            <div class="box-bar">
+                <h3>Exrcises Left</h3>
+                <p>Exercices number : {{session['total_exercises']}}</p>
+                <progress id="prog_exercises" value="0" max={{session['initial_exercises_per_set']}}></progress>
+                <span class="progress-label" id="span_prog_exercises">{{session["exercises_per_set"]}}/{{session["initial_exercises_per_set"]}}</span>
+
+            </div>
+            <div class="box-bar">
+                <h3>Time elapsed</h3>
+                <p>Total time : {{session["initial_total_time_h"]}}:{{session["initial_total_time_min"]}}:{{session["initial_total_time_s"]}}</p>
+                <progress id="prog_time" value="0" max={{session['initial_total_work_time']}}></progress>
+                <span class="progress-label"><span id="prog_h">00</span>:<span id="prog_m">00</span>:<span id="prog_s">00</span></span>
+
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    var work_time = {{work_time}};
+    var rest_time = {{rest_time}};
+    var set_work_time, set_rest_time;
+    prog_exercises=document.getElementById("prog_exercises");
+    pourcentage=0;
+
+    function updateWorkTime() {
+        fetch('/update_work_time')
+        .then(response => response.json())
+        .then(data => {
+            heures = data.heures; 
+            minutes = data.minutes; 
+            secondes = data.secondes;
+            progress_exo=data.exercises
+            progress_sets=data.sets;
+            rest_time=data.rest_time;
+            total_time=data.total_time;
+            total_heures=data.total_heures;
+            total_minutes=data.total_minutes;
+            total_secondes=data.total_secondes;
+            if (total_time >= {{session['initial_total_work_time']}}) {
+                pourcentage = 100;
+            } else {
+                pourcentage = Math.round(total_time / {{session['initial_total_work_time']}} * 100);
+            }
+            document.getElementById('heures').textContent = heures;
+            document.getElementById('minutes').textContent = minutes;
+            document.getElementById('secondes').textContent = secondes;
+            document.getElementById("prog_exercises").value=progress_exo;
+            document.getElementById("span_prog_exercises").textContent=progress_exo+"/"+{{session["initial_exercises_per_set"]}}
+            document.getElementById("prog_sets").value=progress_sets;
+            document.getElementById("span_prog_sets").textContent=progress_sets+"/"+{{session["initial_sets"]}}
+            document.getElementById("prog_time").value=total_time;
+            document.getElementById("prog_h").textContent=total_heures;
+            document.getElementById("prog_m").textContent=total_minutes;
+            document.getElementById("prog_s").textContent=total_secondes;
+            if(data.timer){
+                if (rest_time) {
+                    work_time = false;
+                    rest_time = true;
+                    clearInterval(set_work_time); 
+                    audio=new Audio("../static/audio/beep-09.wav")
+                    audio4=new Audio("../static/audio/break.mp3");
+                    audio5=new Audio("../static/audio/beep.wav");
+                    document.getElementById("pause-form").disabled=true;
+                    document.getElementById("pause-button").disabled=true;
+                    document.getElementById("start-form").disabled=true;
+                    timer=document.getElementById("timer_clock");
+                    textInit=timer.innerHTML;
+                    audio.play();
+                    setAud4=setTimeout(function() {
+                        document.getElementById("break").classList.add("on");
+                        document.getElementById("work").classList.remove("on");
+                        timer.innerHTML="<div>Break !</div>";
+                        audio4.play();
+                    }, 1500);
+                    setAud5=setTimeout(function() {
+                        audio5.play();
+                        timer.innerHTML=textInit;
+                    }, 3500);
+                    setTimeout(function() {
+                        updateRestTime();
+                        document.getElementById("pause-form").disabled=false;
+                        document.getElementById("pause-button").disabled=false;
+                        document.getElementById("start-form").disabled=false;
+                        // Appels répétés toutes les 1 seconde
+                        set_rest_time = setInterval(updateRestTime, 1000);
+                    }, 4500);
+                }
+            }
+            else{
+                audio=new Audio("../static/audio/beep-09.wav");
+                audio.play();
+                setExit=setTimeout(function() {
+                    exit_timer();
+                }, 1000);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    
+    function updateRestTime() {
+        fetch('/update_rest_time')
+        .then(response => response.json())
+        .then(data => {
+            heures = data.heures; 
+            minutes = data.minutes; 
+            secondes = data.secondes;
+            progress_exo=data.exercises;
+            work_time=data.work_time
+            total_time=data.total_time;
+            total_heures=data.total_heures;
+            total_minutes=data.total_minutes;
+            total_secondes=data.total_secondes;
+            if (total_time >= {{session['initial_total_work_time']}}) {
+                pourcentage = 100;
+            } else {
+                pourcentage = Math.round(total_time / {{session['initial_total_work_time']}} * 100);
+            }
+            document.getElementById('heures').textContent = heures;
+            document.getElementById('minutes').textContent = minutes;
+            document.getElementById('secondes').textContent = secondes;
+            document.getElementById("prog_exercises").value=progress_exo;
+            document.getElementById("span_prog_exercises").textContent=progress_exo+"/"+{{session["initial_exercises_per_set"]}}
+            document.getElementById("prog_time").value=total_time;
+            document.getElementById("prog_h").textContent=total_heures;
+            document.getElementById("prog_m").textContent=total_minutes;
+            document.getElementById("prog_s").textContent=total_secondes;
+
+            if (work_time) {
+                work_time = true;
+                rest_time = false;
+                clearInterval(set_rest_time);
+                    audio=new Audio("../static/audio/beep-09.wav")
+                    audio4=new Audio("../static/audio/work.mp3");
+                    audio5=new Audio("../static/audio/beep.wav");
+                    document.getElementById("pause-form").disabled=true;
+                    document.getElementById("pause-button").disabled=true;
+                    document.getElementById("start-form").disabled=true;
+                    timer=document.getElementById("timer_clock");
+                    textInit=timer.innerHTML;
+                    audio.play();
+                    setAud4=setTimeout(function() {
+                        document.getElementById("work").classList.add("on");
+                        document.getElementById("break").classList.remove("on");
+                        timer.innerHTML="<div>work !</div>";
+                        audio4.play();
+                    }, 1500);
+                    setAud5=setTimeout(function() {
+                        audio5.play();
+                        timer.innerHTML=textInit;
+                    }, 3500);
+                    setTimeout(function() {
+                        updateWorkTime();
+                        document.getElementById("pause-form").disabled=false;
+                        document.getElementById("pause-button").disabled=false;
+                        document.getElementById("start-form").disabled=false;
+                        // Appels répétés toutes les 1 seconde
+                        set_work_time = setInterval(updateWorkTime, 1000);
+                    }, 4500);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function pause(){
+        if(rest_time){
+            clearInterval(set_rest_time);
+        }
+        if(work_time){
+            clearInterval(set_work_time);
+        }
+    }
+    start=0;
+    function start_timer(){
+        if(rest_time){
+            set_rest_time=setInterval(updateRestTime,1000);
+        }
+        if(work_time){
+            if(start<1){
+                audio1=new Audio("../static/audio/three.mp3");
+                audio2=new Audio("../static/audio/two.mp3");
+                audio3=new Audio("../static/audio/one.mp3");
+                audio4=new Audio("../static/audio/work.mp3");
+                audio5=new Audio("../static/audio/beep.wav");
+                document.getElementById("pause-form").disabled=true;
+                document.getElementById("pause-button").disabled=true;
+                document.getElementById("start-form").disabled=true;
+                timer=document.getElementById("timer_clock");
+                textInit=timer.innerHTML;
+                setAud1=setTimeout(function() {
+                    timer.innerHTML="<div>3</div>";
+                    audio1.play();
+                }, 1000);
+                setAud2=setTimeout(function() {
+                    timer.innerHTML="<div>2</div>";
+                    audio2.play();
+                }, 2500);
+                setAud3=setTimeout(function() {
+                    timer.innerHTML="<div>1</div>";
+                    audio3.play();
+                }, 3500);
+                setAud4=setTimeout(function() {
+                    timer.innerHTML="<div>Work !</div>";
+                    audio4.play();
+                }, 4000);
+                setAud5=setTimeout(function() {
+                    audio5.play();
+                    timer.innerHTML=textInit;
+                }, 5500);
+                setTimeout(function() {
+                    updateWorkTime();
+                    document.getElementById("pause-form").disabled=false;
+                    document.getElementById("pause-button").disabled=false;
+                    document.getElementById("start-form").disabled=false;
+                    // Appels répétés toutes les 1 seconde
+                    set_work_time = setInterval(updateWorkTime, 1000);
+                }, 6000);
+                    start++;
+            }
+            else{
+                set_work_time = setInterval(updateWorkTime, 1000);
+            }
+        }
+    }
+    function exit_timer(){
+        clearInterval(set_rest_time); 
+        clearInterval(set_work_time);
+        audio=new Audio("../static/audio/success.mp3");
+        audio.play();
+        swal({
+            title: "Great work ! ",
+            text: "You passed " + pourcentage + "% of your workout",
+            icon: "../static/img/congrats.png",
+            button: "Thank's",
+            closeOnClickOutside: false
+        }).then((value) => {
+            if (value) {
+                document.getElementById("exit-form").submit(); // Soumettre le formulaire après avoir cliqué sur "Thank's"
+            }
+        });
+    }
+    
+
+
+</script>
+<script src={{url_for('static',filename='js/timer.js')}}></script>
+
+</html>
